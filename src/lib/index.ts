@@ -1,7 +1,18 @@
 import { useCallback } from "react";
-import { Query, QueryClient, useQuery, useQueryClient } from "react-query";
+import { QueryClient, useQuery, useQueryClient } from "react-query";
 
-type SetState<T> = (prev: T | undefined) => T | Promise<T>;
+type State<T> = T extends Promise<infer TResolve>
+  ? TResolve
+  : T extends () => infer TResult
+  ? State<TResult>
+  : T;
+type PrevState<T> = T extends Promise<infer TResolve>
+  ? TResolve | undefined
+  : T extends () => infer TResult
+  ? PrevState<TResult>
+  : T;
+type MutableState<T> = State<T> | SetState<T>;
+type SetState<T> = (prev: PrevState<T>) => State<T> | Promise<State<T>>;
 
 function createTempQueryKey(key: any | any[]) {
   return Array.isArray(key) ? key.concat("__temp") : [key, "__temp"];
@@ -10,7 +21,7 @@ function createTempQueryKey(key: any | any[]) {
 function setGlobalStateInternal<T>(
   queryClient: QueryClient,
   key: any | any[],
-  value: Promise<T> | T | SetState<T>,
+  value: MutableState<T>,
   queryData?: any,
   tempKey?: any
 ) {
@@ -30,20 +41,30 @@ function setGlobalStateInternal<T>(
   queryClient.prefetchQuery(key);
 }
 
+export function setGlobalState(
+  queryClient: QueryClient,
+  value: Record<string, any>
+): void;
 export function setGlobalState<T>(
   queryClient: QueryClient,
   key: any | any[],
-  value: Promise<T> | T | SetState<T>
-) {
-  setGlobalStateInternal(queryClient, key, value);
+  value: MutableState<T>
+): void;
+export function setGlobalState(queryClient: QueryClient, ...args: any[]) {
+  if (args.length < 2) {
+    return Object.entries(args[0]).forEach(([key, value]) => {
+      setGlobalStateInternal(queryClient, key, value);
+    });
+  }
+  setGlobalStateInternal(queryClient, args[0], args[1]);
 }
 
 export function useGlobalState<T = unknown>(
   key: any | any[],
-  defaultValue?: Promise<T> | T | (() => T | Promise<T>)
+  defaultValue?: T
 ): [
-  T,
-  (value: Promise<T> | T | SetState<T>) => void,
+  State<T>,
+  (value: MutableState<T>) => void,
   { loading: boolean; error: any }
 ] {
   const queryClient = useQueryClient();
@@ -74,7 +95,7 @@ export function useGlobalState<T = unknown>(
     { staleTime: Infinity, cacheTime: Infinity }
   );
   const setState = useCallback(
-    (value: Promise<T> | T | SetState<T>) => {
+    (value: MutableState<T>) => {
       setGlobalStateInternal(queryClient, key, value, queryData, tempKey);
     },
     [query]

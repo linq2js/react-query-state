@@ -9,7 +9,7 @@ test("sync value", async () => {
   const [wrapper] = createWrapper();
   const { result } = renderHook(
     () => {
-      return useGlobalState<number>("count", 1);
+      return useGlobalState("count", 1);
     },
     { wrapper }
   );
@@ -21,7 +21,7 @@ test("sync value", async () => {
   expect(result.current[0]).toBe(2);
   expect(result.current[2].loading).toBe(false);
 
-  result.current[1]((prev) => (prev ?? 0) + 1);
+  result.current[1]((prev) => prev + 1);
   await delay();
   expect(result.current[0]).toBe(3);
   expect(result.current[2].loading).toBe(false);
@@ -36,7 +36,7 @@ test("sync func", async () => {
   };
   const { result, rerender } = renderHook(
     () => {
-      return useGlobalState<number>("count", f);
+      return useGlobalState("count", f);
     },
     { wrapper }
   );
@@ -53,7 +53,7 @@ test("async value", async () => {
   const [wrapper] = createWrapper();
   const { result } = renderHook(
     () => {
-      return useGlobalState<number>(
+      return useGlobalState(
         "count",
         delay(10).then(() => 1)
       );

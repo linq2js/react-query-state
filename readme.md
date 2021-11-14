@@ -16,6 +16,10 @@ YARN
 yarn add react-query-global-state
 ```
 
+## Peer dependencies
+
+- react-query
+
 ## Usages
 
 ```jsx
