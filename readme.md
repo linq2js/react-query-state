@@ -23,9 +23,12 @@ yarn add react-query-global-state
 ## Usages
 
 ```jsx
+import React from "react";
+import { QueryClient, QueryClientProvider } from "react-query";
 import { useGlobalState } from "react-query-global-state";
 
 const DEFAULT_COUNT = 1;
+const queryClient = new QueryClient();
 
 function CounterApp() {
   const [count, setCount] = useGlobalState("count", DEFAULT_COUNT);
@@ -37,6 +40,16 @@ function CounterApp() {
     </div>
   );
 }
+
+export default function () {
+    // setup react-query
+  return (
+    <QueryClientProvider client={queryClient}>
+      <CounterApp />
+    </QueryClientProvider>
+  );
+}
+
 ```
 
 ## API References
