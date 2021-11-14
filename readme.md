@@ -18,8 +18,6 @@ yarn add react-query-global-state
 
 ## Usages
 
-### Sync state value
-
 ```jsx
 import { useGlobalState } from "react-query-global-state";
 
