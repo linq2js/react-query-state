@@ -1,6 +1,6 @@
 {
   "name": "react-query-global-state",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Global state hook for react-query",
   "main": "dist/js/lib/index.js",
   "module": "dist/es/lib/index.js",
