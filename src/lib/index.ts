@@ -1,6 +1,8 @@
 import { useCallback } from "react";
 import { QueryClient, useQuery, useQueryClient } from "react-query";
 
+const STATE_KEY = `@${Date.now().toString(36)}`;
+
 type State<T> = T extends Promise<infer TResolve>
   ? TResolve
   : T extends () => infer TResult
@@ -14,8 +16,8 @@ type PrevState<T> = T extends Promise<infer TResolve>
 type MutableState<T> = State<T> | SetState<T>;
 type SetState<T> = (prev: PrevState<T>) => State<T> | Promise<State<T>>;
 
-function createTempQueryKey(key: any | any[]) {
-  return Array.isArray(key) ? key.concat("__temp") : [key, "__temp"];
+function createStateKey(key: any | any[]) {
+  return Array.isArray(key) ? key.concat(STATE_KEY) : [key, STATE_KEY];
 }
 
 function setGlobalStateInternal<T>(
@@ -26,7 +28,7 @@ function setGlobalStateInternal<T>(
   tempKey?: any
 ) {
   if (!queryData) {
-    if (!tempKey) tempKey = createTempQueryKey(key);
+    if (!tempKey) tempKey = createStateKey(key);
     queryData = queryClient.getQueryData(tempKey);
   }
   if (typeof value === "function") {
@@ -68,7 +70,7 @@ export function useGlobalState<T = unknown>(
   { loading: boolean; error: any }
 ] {
   const queryClient = useQueryClient();
-  const tempKey = createTempQueryKey(key);
+  const tempKey = createStateKey(key);
   let queryData: any = queryClient.getQueryData(tempKey);
   if (!queryData) {
     try {
