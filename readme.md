@@ -79,7 +79,9 @@ A function to update global state outside react component
 - value: Can be anything or a function the retrieves previous value and return new value
 
 ```js
-setGlobalState('count', 100);
-setGlobalState('count', Promise.resolve(100));
-setGlobalState('count', prev => /* prev value might be undefined */ prev + 1);
+setGlobalState(queryClient, 'count', 100);
+setGlobalState(queryClient, 'count', Promise.resolve(100));
+setGlobalState(queryClient, 'count', prev => /* prev value might be undefined */ prev + 1);
+// update multiple states
+setGlobalState(queryClient, { state1: 1, state2: 2, state3: 3 });
 ```
