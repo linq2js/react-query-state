@@ -17,12 +17,10 @@ test("sync value", async () => {
   expect(result.current[2].loading).toBe(false);
 
   result.current[1](2);
-  await delay();
   expect(result.current[0]).toBe(2);
   expect(result.current[2].loading).toBe(false);
 
   result.current[1]((prev) => prev + 1);
-  await delay();
   expect(result.current[0]).toBe(3);
   expect(result.current[2].loading).toBe(false);
 });

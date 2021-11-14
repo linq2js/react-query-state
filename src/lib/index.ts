@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { QueryClient, useQuery, useQueryClient } from "react-query";
 
 const STATE_KEY = `@${Date.now().toString(36)}`;
@@ -25,12 +25,14 @@ function setGlobalStateInternal<T>(
   key: any | any[],
   value: MutableState<T>,
   queryData?: any,
-  tempKey?: any
+  stateKey?: any,
+  onSyncValueChanged?: () => void
 ) {
   if (!queryData) {
-    if (!tempKey) tempKey = createStateKey(key);
-    queryData = queryClient.getQueryData(tempKey);
+    if (!stateKey) stateKey = createStateKey(key);
+    queryData = queryClient.getQueryData(stateKey);
   }
+  let prevValue = queryData.value;
   if (typeof value === "function") {
     queryData.value = (value as Function)(
       typeof queryData.value?.then === "function"
@@ -40,7 +42,11 @@ function setGlobalStateInternal<T>(
   } else {
     queryData.value = value;
   }
+  if (prevValue === queryData.value) return;
   queryClient.prefetchQuery(key);
+  // is async value
+  if (typeof queryData.value?.then === "function") return;
+  onSyncValueChanged?.();
 }
 
 export function setGlobalState(
@@ -71,6 +77,7 @@ export function useGlobalState<T = unknown>(
 ] {
   const queryClient = useQueryClient();
   const tempKey = createStateKey(key);
+  const rerender = useState<any>()[1];
   let queryData: any = queryClient.getQueryData(tempKey);
   if (!queryData) {
     try {
@@ -86,6 +93,7 @@ export function useGlobalState<T = unknown>(
     }
     queryClient.setQueryData(tempKey, queryData);
   }
+  const isPromise = typeof queryData.value?.then === "function";
   const query = useQuery(
     key,
     () => {
@@ -94,19 +102,20 @@ export function useGlobalState<T = unknown>(
       }
       return queryData.value;
     },
-    { staleTime: Infinity, cacheTime: Infinity }
+    {
+      staleTime: Infinity,
+      cacheTime: Infinity,
+    }
   );
   const setState = useCallback(
     (value: MutableState<T>) => {
-      setGlobalStateInternal(queryClient, key, value, queryData, tempKey);
+      setGlobalStateInternal(queryClient, key, value, queryData, tempKey, () =>
+        rerender({})
+      );
     },
-    [query]
+    [query, rerender]
   );
-  queryData.loading =
-    typeof queryData.value?.then === "function" ? query.isLoading : false;
-  return [
-    typeof queryData.value?.then === "function" ? query.data : queryData.value,
-    setState,
-    queryData,
-  ];
+
+  queryData.loading = isPromise ? query.isLoading : false;
+  return [isPromise ? query.data : queryData.value, setState, queryData];
 }
